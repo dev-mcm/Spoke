@@ -1,20 +1,6 @@
 import { mapFieldsToModel } from './lib/utils'
 import { InteractionStep, r } from '../models'
 
-export const schema = `
-  type InteractionStep {
-    id: ID!
-    question: Question
-    questionText: String
-    script: String
-    answerOption: String
-    parentInteractionId: String
-    isDeleted: Boolean
-    answerActions: String
-    questionResponse(campaignContactId: String): QuestionResponse
-  }
-`
-
 export const resolvers = {
   InteractionStep: {
     ...mapFieldsToModel([
@@ -23,14 +9,10 @@ export const resolvers = {
       'answerOption',
       'answerActions',
       'parentInteractionId',
-      'question',
       'isDeleted'
     ], InteractionStep),
     questionText: async(interactionStep) => {
-      const interaction = await r.table('interaction_step')
-        .get(interactionStep.id)
-
-      return interaction.question
+      return interactionStep.question
     },
     question: async (interactionStep) => interactionStep,
     questionResponse: async (interactionStep, { campaignContactId }) => (

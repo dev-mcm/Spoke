@@ -1,22 +1,16 @@
 import { mapFieldsToModel } from './lib/utils'
 import { r, User } from '../models'
 
-export const schema = `
-  type User {
-    id: ID
-    firstName: String
-    lastName: String
-    displayName: String
-    email: String
-    cell: String
-    organizations(role: String): [Organization]
-    todos(organizationId: String): [Assignment]
-    roles(organizationId: String!): [String]
-    assignedCell: Phone
-    assignment(campaignId: String): Assignment,
-    terms: Boolean
-  }
-`
+export function buildUserOrganizationQuery(queryParam, organizationId, role) {
+  const roleFilter = role ? { role } : {}
+
+  return queryParam
+    .from('user_organization')
+    .innerJoin('user', 'user_organization.user_id', 'user.id')
+    .where(roleFilter)
+    .where({ 'user_organization.organization_id': organizationId })
+    .distinct()
+}
 
 export const resolvers = {
   User: {
@@ -53,7 +47,7 @@ export const resolvers = {
     ),
     todos: async (user, { organizationId }) =>
       r.table('assignment')
-        .getAll(user.id, { index: 'user_id' })
+        .getAll(user.id, { index: 'assignment.user_id' })
         .eqJoin('campaign_id', r.table('campaign'))
         .filter({ 'is_started': true,
                  'organization_id': organizationId,

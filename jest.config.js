@@ -1,6 +1,9 @@
 module.exports = {
+  verbose: true,
+  testURL: "http://localhost/",
   testEnvironment: "node",
   globals: {
+    SUPPRESS_DATABASE_AUTOCREATE: "1",
     DB_JSON: JSON.stringify({
       client: "pg",
       connection: {
@@ -16,7 +19,7 @@ module.exports = {
     RETHINK_KNEX_NOREFS: "1", // avoids db race conditions
     DEFAULT_SERVICE: 'fakeservice',
     DST_REFERENCE_TIMEZONE: 'America/New_York',
-    DATABASE_SETUP_TEARDOWN_TIMEOUT: 20000,
+    DATABASE_SETUP_TEARDOWN_TIMEOUT: 60000,
   },
   moduleFileExtensions: [
     "js",
@@ -34,4 +37,5 @@ module.exports = {
   },
   collectCoverageFrom : ["**/*.{js,jsx}", "!**/node_modules/**", "!**/__test__/**", "!**/deploy/**", "!**/coverage/**"],
   setupTestFrameworkScriptFile: "<rootDir>/__test__/setup.js",
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/__test__/e2e/"]
 };

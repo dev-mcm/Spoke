@@ -1,50 +1,36 @@
 import { mapFieldsToModel } from './lib/utils'
-import { Campaign, JobRequest, r } from '../models'
+import { Campaign, JobRequest, r, cacheableData } from '../models'
+import { currentEditors } from '../models/cacheable_queries'
 
-export const schema = `
-  input CampaignsFilter {
-    isArchived: Boolean
+export function buildCampaignQuery(queryParam, organizationId, campaignsFilter, addFromClause = true) {
+  let query = queryParam
+
+  if (addFromClause) {
+    query = query.from('campaign')
   }
 
-  type CampaignStats {
-    sentMessagesCount: Int
-    receivedMessagesCount: Int
-    optOutsCount: Int
+  query = query.where('organization_id', organizationId)
+
+  if (campaignsFilter) {
+    const resultSize = (campaignsFilter.listSize ? campaignsFilter.listSize : 0)
+    const pageSize = (campaignsFilter.pageSize ? campaignsFilter.pageSize : 0)
+    
+    if ('isArchived' in campaignsFilter) {
+      query = query.where({ is_archived: campaignsFilter.isArchived })
+    }
+    if ('campaignId' in campaignsFilter) {
+      query = query.where('campaign.id', parseInt(campaignsFilter.campaignId, 10))
+    }
+    if (resultSize && !pageSize) {
+      query = query.limit(resultSize)
+    }
+    if (resultSize && pageSize) {
+      query = query.limit(resultSize).offSet(pageSize)
+    }
   }
 
-  type JobRequest {
-    id: String
-    jobType: String
-    assigned: Boolean
-    status: Int
-    resultMessage: String
-  }
-
-  type Campaign {
-    id: ID
-    organization: Organization
-    title: String
-    description: String
-    dueBy: Date
-    isStarted: Boolean
-    isArchived: Boolean
-    texters: [User]
-    assignments: [Assignment]
-    interactionSteps: [InteractionStep]
-    contacts: [CampaignContact]
-    contactsCount: Int
-    hasUnassignedContacts: Boolean
-    customFields: [String]
-    cannedResponses(userId: String): [CannedResponse]
-    stats: CampaignStats,
-    pendingJobs: [JobRequest]
-    datawarehouseAvailable: Boolean
-    useDynamicAssignment: Boolean
-    introHtml: String
-    primaryColor: String
-    logoImageUrl: String
-  }
-`
+  return query
+}
 
 export const resolvers = {
   JobRequest: {
@@ -95,16 +81,26 @@ export const resolvers = {
       'id',
       'title',
       'description',
-      'dueBy',
       'isStarted',
       'isArchived',
       'useDynamicAssignment',
       'introHtml',
       'primaryColor',
-      'logoImageUrl'
+      'logoImageUrl',
+      'overrideOrganizationTextingHours',
+      'textingHoursEnforced',
+      'textingHoursStart',
+      'textingHoursEnd',
+      'timezone'
     ], Campaign),
+    dueBy: (campaign) => (
+      (campaign.due_by instanceof Date || !campaign.due_by)
+      ? campaign.due_by || null
+      : new Date(campaign.due_by)
+    ),
     organization: async (campaign, _, { loaders }) => (
-      loaders.organization.load(campaign.organization_id)
+      campaign.organization
+      || loaders.organization.load(campaign.organization_id)
     ),
     datawarehouseAvailable: (campaign, _, { user }) => (
       user.is_superadmin && !!process.env.WAREHOUSE_DB_HOST
@@ -116,19 +112,25 @@ export const resolvers = {
         .getAll(campaign.id, { index: 'campaign_id' })
         .eqJoin('user_id', r.table('user'))('right')
     ),
-    assignments: async (campaign) => (
-      r.table('assignment')
+    assignments: async (campaign, { assignmentsFilter }) => {
+      let query = r.table('assignment')
         .getAll(campaign.id, { index: 'campaign_id' })
-    ),
+
+      if (assignmentsFilter && assignmentsFilter.hasOwnProperty('texterId') && assignmentsFilter.textId !== null) {
+        query = query.filter({ user_id: assignmentsFilter.texterId })
+      }
+
+      return query
+    },
     interactionSteps: async (campaign) => (
-      r.table('interaction_step')
-        .getAll(campaign.id, { index: 'campaign_id' })
-        .filter({ is_deleted: false })
+      campaign.interactionSteps
+      || cacheableData.campaign.dbInteractionSteps(campaign.id)
     ),
     cannedResponses: async (campaign, { userId }) => (
-      r.table('canned_response')
-        .getAll(campaign.id, { index: 'campaign_id' })
-        .filter({ user_id: userId || '' })
+      await cacheableData.cannedResponse.query({
+        userId: userId || '',
+        campaignId: campaign.id
+      })
     ),
     contacts: async (campaign) => (
       r.knex('campaign_contact')
@@ -147,15 +149,16 @@ export const resolvers = {
         .limit(1)
       return contacts.length > 0
     },
-    customFields: async (campaign) => {
-      const campaignContacts = await r.table('campaign_contact')
-        .getAll(campaign.id, { index: 'campaign_id' })
-        .limit(1)
-      if (campaignContacts.length > 0) {
-        return Object.keys(JSON.parse(campaignContacts[0].custom_fields))
+    customFields: async (campaign) => (
+      campaign.customFields
+      || cacheableData.campaign.dbCustomFields(campaign.id)
+    ),
+    stats: async (campaign) => campaign,
+    editors: async (campaign, _, { user }) => {
+      if (r.redis) {
+        return currentEditors(r.redis, campaign, user)
       }
-      return []
-    },
-    stats: async (campaign) => campaign
+      return ''
+    }
   }
 }

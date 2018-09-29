@@ -9,6 +9,7 @@ import Badge from 'material-ui/Badge'
 import moment from 'moment'
 import Divider from 'material-ui/Divider'
 import { withRouter } from 'react-router'
+import { dataTest } from '../lib/attributes'
 
 const inlineStyles = {
   badge: {
@@ -59,15 +60,16 @@ export class AssignmentSummary extends Component {
     }
   }
 
-  renderBadgedButton({ assignment, title, count, primary, disabled, contactsFilter, hideIfZero, style }) {
+  renderBadgedButton({ dataTestText, assignment, title, count, primary, disabled, contactsFilter, hideIfZero, style }) {
     if (count === 0 && hideIfZero) { return '' }
     if (count === 0) {
       return (
         <RaisedButton
+          {...dataTest(dataTestText)}
           disabled={disabled}
           label={title}
           primary={primary && !disabled}
-          onTouchTap={() => this.goToTodos(contactsFilter, assignment.id)}
+          onClick={() => this.goToTodos(contactsFilter, assignment.id)}
         />)
     } else {
       return (<Badge
@@ -78,20 +80,21 @@ export class AssignmentSummary extends Component {
         secondary={!primary && !disabled}
       >
         <RaisedButton
+          {...dataTest(dataTestText)}
           disabled={disabled}
           label={title}
-          onTouchTap={() => this.goToTodos(contactsFilter, assignment.id)}
+          onClick={() => this.goToTodos(contactsFilter, assignment.id)}
         />
       </Badge>)
     }
   }
 
   render() {
-    const { assignment, unmessagedCount, unrepliedCount, badTimezoneCount, totalMessagedCount, pastMessagesCount } = this.props
-    const { title, description, dueBy,
+    const { assignment, unmessagedCount, unrepliedCount, badTimezoneCount, totalMessagedCount, pastMessagesCount, skippedMessagesCount } = this.props
+    const { title, description, hasUnassignedContacts, dueBy,
             primaryColor, logoImageUrl, introHtml,
             useDynamicAssignment } = assignment.campaign
-
+    const maxContacts = assignment.maxContacts
     return (
       <div className={css(styles.container)}>
         <Card
@@ -109,15 +112,17 @@ export class AssignmentSummary extends Component {
           </div>
           <CardActions>
             {(window.NOT_IN_USA && window.ALLOW_SEND_ALL) ? '' : this.renderBadgedButton({
+              dataTestText: 'sendFirstTexts',
               assignment,
               title: 'Send first texts',
               count: unmessagedCount,
               primary: true,
-              disabled: false,
+              disabled: (useDynamicAssignment && !hasUnassignedContacts && unmessagedCount == 0) || (useDynamicAssignment && maxContacts === 0),
               contactsFilter: 'text',
               hideIfZero: !useDynamicAssignment
             })}
             {(window.NOT_IN_USA && window.ALLOW_SEND_ALL) ? '' : this.renderBadgedButton({
+              dataTestText: 'sendReplies',
               assignment,
               title: 'Send replies',
               count: unrepliedCount,
@@ -134,6 +139,16 @@ export class AssignmentSummary extends Component {
               primary: false,
               disabled: false,
               contactsFilter: 'stale',
+              hideIfZero: true
+            })}
+            {this.renderBadgedButton({
+              assignment,
+              title: 'Skipped Messages',
+              count: skippedMessagesCount,
+              style: inlineStyles.pastMsgStyle,
+              primary: false,
+              disabled: false,
+              contactsFilter: 'skipped',
               hideIfZero: true
             })}
             {(window.NOT_IN_USA && window.ALLOW_SEND_ALL) ? this.renderBadgedButton({
@@ -170,6 +185,7 @@ AssignmentSummary.propTypes = {
   badTimezoneCount: PropTypes.number,
   totalMessagedCount: PropTypes.number,
   pastMessagesCount: PropTypes.number,
+  skippedMessagesCount: PropTypes.number,
   data: PropTypes.object,
   mutations: PropTypes.object
 }

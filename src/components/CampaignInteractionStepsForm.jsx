@@ -24,6 +24,7 @@ import {
   findParent,
   makeTree
 } from '../lib'
+import { dataTest } from '../lib/attributes'
 
 const styles = {
   pullRight: {
@@ -124,11 +125,13 @@ export default class CampaignInteractionStepsForm extends React.Component {
         />
         <CardText>
           <GSForm
+            {...dataTest('childInteraction', !interactionStep.parentInteractionId)}
             schema={this.formSchema}
             value={interactionStep}
             onChange={this.handleFormChange.bind(this)}
           >
             {interactionStep.parentInteractionId ? <Form.Field
+              {...dataTest('answerOption')}
               name='answerOption'
               label='Answer'
               fullWidth
@@ -162,6 +165,7 @@ export default class CampaignInteractionStepsForm extends React.Component {
                </div>)
             : ''}
             <Form.Field
+              {...dataTest('editorInteraction')}
               name='script'
               type='script'
               fullWidth
@@ -171,6 +175,7 @@ export default class CampaignInteractionStepsForm extends React.Component {
               hintText="This is what your texters will send to your contacts. E.g. Hi, {firstName}. It's {texterFirstName} here."
             />
             <Form.Field
+              {...dataTest('questionText')}
               name='questionText'
               label='Question'
               fullWidth
@@ -183,6 +188,7 @@ export default class CampaignInteractionStepsForm extends React.Component {
       <div style={styles.answerContainer}>
         {interactionStep.questionText && interactionStep.script && (!interactionStep.parentInteractionId || interactionStep.answerOption) ? <div>
           <RaisedButton
+            {...dataTest('addResponse')}
             label='+ Add a response'
             onTouchTap={this.addStep(interactionStep.id).bind(this)}
             style={{ marginBottom: '10px' }}
@@ -211,6 +217,7 @@ export default class CampaignInteractionStepsForm extends React.Component {
         />
         {this.renderInteractionStep(tree)}
         <RaisedButton
+          {...dataTest('interactionSubmit')}
           primary
           label={this.props.saveLabel}
           onTouchTap={this.onSave.bind(this)}
