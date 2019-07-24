@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-- "10.3"
+- "8.10"
 cache:
   yarn: true
 services:
@@ -19,3 +19,7 @@ before_script:
 - psql -c 'GRANT ALL PRIVILEGES ON DATABASE spoke_test TO spoke_test;' -U postgres
 script:
 - yarn test
+<<<<<<< HEAD
+=======
+- ./travis-run-e2e-tests
+>>>>>>> 200b9ad25e46455f7edafdc0070aad9bd6e325c0

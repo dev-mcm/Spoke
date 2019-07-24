@@ -4,7 +4,7 @@
   "description": "Spoke",
   "main": "src/server",
   "engines": {
-    "node": ">=10.3 <11",
+    "node": ">=6.10.3 <11",
     "npm": "3.10.10"
   },
   "scripts": {
@@ -42,7 +42,8 @@
     "jest-test": "jest __test__/backend.test.js",
     "dev": "nf start -w --procfile ./dev-tools/Procfile.dev",
     "dev-nowrap": "nf start --trim 500 --procfile ./dev-tools/Procfile.dev --env ./__test__/e2e/.env.e2e",
-    "debug-server": "nf start -w --procfile ./dev-tools/Procfile-debug-server.dev"
+    "debug-server": "nf start -w --procfile ./dev-tools/Procfile-debug-server.dev",
+    "deploy:lambda": "./deploy/terraform-aws-lambda/bin/build --path ./"
   },
   "repository": {
     "type": "git",
@@ -153,6 +154,7 @@
     "babel-jest": "^22.1.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-es2017": "^6.24.1",
+    "claudia": "^5.4.0",
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-15": "^1.0.5",
     "eslint": "2.13.1",

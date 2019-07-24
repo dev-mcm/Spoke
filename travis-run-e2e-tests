@@ -3,6 +3,9 @@
 # set -ev
 # Only run on non-pull requests
 # https://docs.travis-ci.com/user/pull-requests/#Pull-Requests-and-Security-Restrictions
+
+
+# TODO: Re-enable e2e tests with non-saucelabs browser engine
 # if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
 #   # Start dev server
 #   npm run dev-nowrap &
