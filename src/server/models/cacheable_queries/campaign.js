@@ -34,6 +34,7 @@ const dbInteractionSteps = async (id) => {
   return r.table('interaction_step')
     .getAll(id, { index: 'campaign_id' })
     .filter({ is_deleted: false })
+    .orderBy('id')
 }
 
 const clear = async (id) => {
@@ -64,6 +65,26 @@ const loadDeep = async (id) => {
   return null
 }
 
+const currentEditors = async (campaign, user) => {
+  // Add user ID in case of duplicate admin names
+  const displayName = `${user.id}~${user.first_name} ${user.last_name}`
+
+  await r.redis.hsetAsync(`campaign_editors_${campaign.id}`, displayName, new Date())
+  await r.redis.expire(`campaign_editors_${campaign.id}`, 120)
+
+  let editors = await r.redis.hgetallAsync(`campaign_editors_${campaign.id}`)
+
+  // Only get editors that were active in the last 2 mins, and exclude the
+  // current user
+  editors = Object.entries(editors).filter(editor => {
+    const rightNow = new Date()
+    return rightNow - new Date(editor[1]) <= 120000 && editor[0] !== displayName
+  })
+
+  // Return a list of comma-separated names
+  return editors.map(editor => editor[0].split('~')[1]).join(', ')
+}
+
 export const campaignCache = {
   clear,
   load: async(id) => {
@@ -90,6 +111,7 @@ export const campaignCache = {
     return await Campaign.get(id)
   },
   reload: loadDeep,
+  currentEditors,
   dbCustomFields,
   dbInteractionSteps
 }

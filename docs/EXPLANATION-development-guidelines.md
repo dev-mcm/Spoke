@@ -1,6 +1,6 @@
-# Development Guidelines
+# Development Guidelines and Tips
 
-This document describes current gotchas in our code base an explains the context
+This document describes tips and current gotchas in our code base and explains the context
 for parts that are evolving in a certain direction (or we *want* to evolve in a certain direction).
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) and the [README](../README.md) for setup
@@ -112,6 +112,8 @@ Production instances can disable automatic migrations on startup with environmen
 
 
 ## Apollo/GraphQL structure and gotchas
+
+Spoke was originally generated from [react-apollo-starter-kit](https://github.com/saikat/react-apollo-starter-kit).  You can look at that project's README for info on some of the libraries used.
 
 See [EXPLANATION-request-example.md](./EXPLANATION-request-example.md) for a great run-down all the
 way through the call stack on the client and server.
